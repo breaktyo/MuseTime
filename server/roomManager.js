@@ -1,10 +1,10 @@
-// server/roomManager.js
+
 const generateRoomCode = require('./utils/generateRoomCode');
 
 class RoomManager {
   constructor() {
-    this.rooms = {}; // { roomCode: { hostId, players: [], playlist, currentSongIndex } }
-    this.playerMap = {}; // { socketId: { name, roomCode } }
+    this.rooms = {}; 
+    this.playerMap = {}; 
   }
 
   createRoom(socketId, hostName) {
@@ -42,11 +42,9 @@ class RoomManager {
     const room = this.rooms[roomCode];
     if (!room) return {};
 
-    // Remove player from room
     room.players = room.players.filter(p => p.id !== socketId);
     delete this.playerMap[socketId];
 
-    // If no players left, delete room
     if (room.players.length === 0) {
       delete this.rooms[roomCode];
       return { roomCode: null, players: [] };

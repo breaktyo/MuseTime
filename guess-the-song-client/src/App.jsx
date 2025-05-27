@@ -30,10 +30,8 @@ function App() {
 
   useEffect(() => {
     socket.on('gameStarted', (songs) => {
-      // Save any song data if needed later
       console.log('Game started!', songs);
-  
-      // Move everyone to the game-round page
+
       setPage('game-round');
     });
   
