@@ -1,49 +1,33 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const cors = require('cors');
+const roomManager = require('./roomManager');
+const chatManager = require('./chatManager');
+const GameManager = require('./gameManager');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: '*',
-  },
+  cors: { origin: '*' },
 });
 
-app.use(cors());
-app.use(express.json());
-
-const PORT = process.env.PORT || 4000;
-
-const rooms = {}; // Store all rooms and players
-const hostReadyStatus = {};
+const gameManager = new GameManager(io, roomManager.rooms);
 
 
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
-
   socket.on('createRoom', ({ name }, callback) => {
-    const code = Math.random().toString(36).substring(2, 7).toUpperCase();
-    rooms[code] = {
-      host: socket.id,
-      players: [{ id: socket.id, name, ready: false, score: 0 }],
-      playlist: '',
-      gameStarted: false,
-    };
-    console.log(`Creating room for ${name} with code ${code}`);
-    socket.join(code);
-    callback(code);
+    const { roomCode, players } = roomManager.createRoom(socket.id, name);
+    socket.join(roomCode);
+    io.to(roomCode).emit('playerList', players);
+    callback(roomCode);
   });
 
   socket.on('joinRoom', ({ name, roomCode }, callback) => {
-    const room = rooms[roomCode];
-    if (room) {
-      room.players.push({ id: socket.id, name, ready: false, score: 0 });
+    const success = roomManager.joinRoom(socket.id, name, roomCode);
+    if (success) {
       socket.join(roomCode);
-  
-      io.to(roomCode).emit('playerList', room.players.map((p) => ({ name: p.name, ready: p.ready })));
-  
+      const players = roomManager.getPlayers(roomCode);
+      io.to(roomCode).emit('playerList', players);
       callback(true);
     } else {
       callback(false);
@@ -51,74 +35,37 @@ io.on('connection', (socket) => {
   });
 
   socket.on('playerReady', ({ roomCode, ready }) => {
-    const room = rooms[roomCode];
-    const player = room?.players.find((p) => p.id === socket.id);
-    if (room && player) {
-      player.ready = ready;
-      updateReadyCount(roomCode);
-      io.to(roomCode).emit('playerList', room.players.map((p) => ({ name: p.name, ready: p.ready })));
-    }
+    roomManager.setReady(socket.id, roomCode, ready);
+    const players = roomManager.getPlayers(roomCode);
+    io.to(roomCode).emit('playerList', players);
   });
 
   socket.on('hostReady', ({ roomCode, ready }) => {
-    const room = rooms[roomCode];
-    if (!room) return;
-  
-    hostReadyStatus[roomCode] = ready;
-  
-    const hostPlayer = room.players.find(p => p.id === room.host);
-    if (hostPlayer) {
-      hostPlayer.ready = ready;
-    }
-  
-    updateReadyCount(roomCode);
-  
-    io.to(roomCode).emit('playerList', room.players.map(p => ({
-      name: p.name,
-      ready: p.ready
-    })));
+    roomManager.setHostReady(roomCode, ready);
   });
 
-  socket.on('startGame', ({ roomCode, playlist }) => {
-    const room = rooms[roomCode];
-    if (room) {
-      room.playlist = playlist;
-      room.gameStarted = true;
-      io.to(roomCode).emit('gameStarted');
-    }
+  socket.on('startGame', async ({ roomCode, playlist }) => {
+    const songs = await gameManager.startGame(roomCode, playlist);
+    const players = roomManager.getPlayers(roomCode);
+    io.to(roomCode).emit('playerList', players);
+    io.to(roomCode).emit('gameStarted', songs);
   });
 
-  socket.on('guess', ({ roomCode, user, message }) => {
-    io.to(roomCode).emit('chatMessage', { user, message });
+  socket.on('guess', ({ roomCode, message }) => {
+    const player = roomManager.getPlayer(socket.id);
+    const result = chatManager.handleGuess(player, roomCode, message);
+    if (result.correct) {
+      gameManager.awardPoints(player.id, roomCode);
+    }
+    io.to(roomCode).emit('chatMessage', { user: player.name, message });
   });
 
   socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
-    for (const code in rooms) {
-      const room = rooms[code];
-      room.players = room.players.filter((p) => p.id !== socket.id);
-      if (room.players.length === 0) {
-        delete hostReadyStatus[code];
-        delete rooms[code];
-      } else {
-        io.to(code).emit('playerList', room.players.map((p) => ({ name: p.name, ready: p.ready })));
-      }
+    const { roomCode, players } = roomManager.leaveRoom(socket.id);
+    if (roomCode) {
+      io.to(roomCode).emit('playerList', players);
     }
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
-
-function updateReadyCount(roomCode) {
-  const room = rooms[roomCode];
-  if (!room) return;
-
-  const playerReadyCount = room.players.filter((p) => p.ready).length;
-  const hostReady = hostReadyStatus[roomCode] || false;
-
-  const totalReady = hostReady ? playerReadyCount + 1 : playerReadyCount;
-
-  io.to(roomCode).emit('readyCount', totalReady);
-}
+server.listen(3001, () => console.log('Server listening on port 3001'));

@@ -1,31 +1,20 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { socket } from '../socket/socket';
+import PlayerList from '../components/PlayerList';
 
-function HostWait({ roomCode, name, setPage }) {
-  const [readyCount, setReadyCount] = useState(0);
+export default function HostWait({ roomCode, setPage }) {
   const [playlist, setPlaylist] = useState('');
   const [isReady, setIsReady] = useState(false);
   const [players, setPlayers] = useState([]);
 
   useEffect(() => {
-    const handleReadyCount = (count) => {
-      setReadyCount(count);
-    };
-    const handlePlayerList = (playerList) => setPlayers(playerList);
-
-
-    socket.on('readyCount', handleReadyCount);
-    socket.on('playerList', handlePlayerList);
-
-    return () => {
-      socket.off('readyCount', handleReadyCount);
-      socket.off('playerList', handlePlayerList);
-    };
+    socket.on('playerList', setPlayers);
+    return () => socket.off('playerList', setPlayers);
   }, []);
 
   const toggleReady = () => {
     socket.emit('hostReady', { roomCode, ready: !isReady });
-    setIsReady((prev) => !prev);
+    setIsReady(prev => !prev);
   };
 
   const startGame = () => {
@@ -34,37 +23,12 @@ function HostWait({ roomCode, name, setPage }) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen p-4 gap-4">
-      <h2 className="text-2xl">Room Code: <strong>{roomCode}</strong></h2>
-      <p>Players ready: {readyCount}</p>
-      <ul className="border rounded p-4 w-64">
-        <li className="flex justify-between font-bold text-blue-600">
-          <span>{name} (Host)</span>
-          <span>{isReady ? '✅' : '❌'}</span>
-        </li>
-        {players.map((player, index) => (
-          <li key={index} className="flex justify-between">
-            <span>{player.name}</span>
-            <span>{player.ready ? '✅' : '❌'}</span>
-          </li>
-        ))}
-      </ul>
-      <input className="p-2" placeholder="Spotify playlist URL" value={playlist} onChange={e => setPlaylist(e.target.value)} />
-      <button
-        className={`p-2 ${isReady ? 'bg-gray-400' : 'bg-yellow-500'} text-white`}
-        onClick={toggleReady}
-      >
-        {isReady ? 'Unready' : 'Ready'}
-      </button>
-      <button
-        className="p-2 bg-green-600 text-white"
-        onClick={startGame}
-        disabled={!isReady}
-      >
-        Start Game
-      </button>
+    <div className="p-4 flex flex-col items-center gap-4">
+      <h2 className="text-xl">Room Code: {roomCode}</h2>
+      <PlayerList players={players} />
+      <input className="p-2 border" placeholder="Playlist URL" value={playlist} onChange={(e) => setPlaylist(e.target.value)} />
+      <button onClick={toggleReady} className="p-2 bg-yellow-500 text-white">{isReady ? 'Unready' : 'Ready'}</button>
+      <button onClick={startGame} className="p-2 bg-green-500 text-white">Start Game</button>
     </div>
   );
 }
-
-export default HostWait;
