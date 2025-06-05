@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function PlayerList({ players, showScore }) {
+export default function PlayerList({ players = [], showScore }) {
   return (
     <div className="w-64 bg-gray-100 p-2">
       <h3 className="text-lg">Players</h3>

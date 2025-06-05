@@ -3,7 +3,8 @@ const { getTimer, clearTimer } = require('./utils/timer');
 class GameManager {
   constructor(io, rooms) {
     this.io = io;
-    this.rooms = rooms; 
+    this.rooms = rooms;
+    this.roundTimers = {}; // store timers per room
   }
 
   async startGame(roomCode, playlist) {
@@ -12,31 +13,36 @@ class GameManager {
 
     room.playlist = playlist;
     room.currentSongIndex = -1;
+    room.scores = {};
+    room.players.forEach(player => (player.score = 0)); // Reset scores
 
-    this.startRound(roomCode);
+    this.io.to(roomCode).emit('gameStarted');
+    this.startNextRound(roomCode);
 
-    
     return playlist;
   }
 
-  startRound(roomCode) {
+  startNextRound(roomCode) {
     const room = this.rooms[roomCode];
-    if (!room || room.playlist.length === 0) return;
+    if (!room || !room.playlist || room.playlist.length === 0) return;
 
-    
-    room.currentSongIndex = (room.currentSongIndex + 1) % room.playlist.length;
+    room.currentSongIndex++;
+    if (room.currentSongIndex >= room.playlist.length) {
+      this.endGame(roomCode);
+      return;
+    }
+
     const currentSong = room.playlist[room.currentSongIndex];
     room.currentSong = currentSong;
     room.guessedPlayers = new Set();
 
     this.io.to(roomCode).emit('newRound', {
-      title: currentSong.title.replace(/[^ ]/g, '_'), 
+      title: currentSong.title.replace(/[^ ]/g, '_'),
       image: currentSong.image,
     });
 
-    if (room.timer) clearTimer(room.timer);
-
-    room.timer = getTimer(() => this.endRound(roomCode), 30000);
+    if (this.roundTimers[roomCode]) clearTimer(this.roundTimers[roomCode]);
+    this.roundTimers[roomCode] = getTimer(() => this.endRound(roomCode), 15000); // 15s round
   }
 
   endRound(roomCode) {
@@ -54,6 +60,21 @@ class GameManager {
 
     this.io.to(roomCode).emit('roundResult', result);
 
+    if (this.roundTimers[roomCode]) clearTimer(this.roundTimers[roomCode]);
+    this.roundTimers[roomCode] = getTimer(() => this.startNextRound(roomCode), 5000); // 5s delay before next round
+  }
+
+  endGame(roomCode) {
+    const room = this.rooms[roomCode];
+    if (!room) return;
+
+    const finalScores = [...room.players].sort((a, b) => b.score - a.score);
+    this.io.to(roomCode).emit('gameEnded', finalScores);
+
+    if (this.roundTimers[roomCode]) {
+      clearTimer(this.roundTimers[roomCode]);
+      delete this.roundTimers[roomCode];
+    }
   }
 
   awardPoints(playerId, roomCode) {

@@ -14,6 +14,12 @@ function App() {
   const [name, setName] = useState('');
   const [page, setPage] = useState('join');
 
+  // Game state tracking
+  const [currentSong, setCurrentSong] = useState(null);
+  const [roundResult, setRoundResult] = useState(null);
+  const [finalScores, setFinalScores] = useState([]);
+
+  // Load session on mount
   useEffect(() => {
     const session = loadSession();
     if (session) {
@@ -24,19 +30,42 @@ function App() {
     }
   }, []);
 
+  // Save session on state change
   useEffect(() => {
     saveSession({ page, roomCode, name, isHost });
   }, [page, roomCode, name, isHost]);
 
+  // Socket listeners for game flow
   useEffect(() => {
-    socket.on('gameStarted', (songs) => {
-      console.log('Game started!', songs);
-
+    socket.on('gameStarted', () => {
+      // Only emitted once at beginning
+      console.log('Game started');
       setPage('game-round');
     });
-  
+
+    socket.on('newRound', (song) => {
+      console.log('New round started', song);
+      setCurrentSong(song);
+      setPage('game-round');
+    });
+
+    socket.on('roundResult', (result) => {
+      console.log('Round ended', result);
+      setRoundResult(result);
+      setPage('round-result');
+    });
+
+    socket.on('gameEnded', (scores) => {
+      console.log('Game ended', scores);
+      setFinalScores(scores);
+      setPage('game-end');
+    });
+
     return () => {
       socket.off('gameStarted');
+      socket.off('newRound');
+      socket.off('roundResult');
+      socket.off('gameEnded');
     };
   }, []);
 
@@ -50,11 +79,11 @@ function App() {
     case 'player-wait':
       return <PlayerWait {...sharedProps} />;
     case 'game-round':
-      return <GameRound {...sharedProps} />;
+      return <GameRound {...sharedProps} currentSong={currentSong} />;
     case 'round-result':
-      return <RoundResult {...sharedProps} />;
+      return <RoundResult {...sharedProps} result={roundResult} />;
     case 'game-end':
-      return <GameEnd {...sharedProps} />;
+      return <GameEnd {...sharedProps} scores={finalScores} />;
     default:
       return <div>Loading...</div>;
   }
