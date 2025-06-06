@@ -5,6 +5,7 @@ import PlayerWait from './pages/PlayerWait';
 import GameRound from './pages/GameRound';
 import RoundResult from './pages/RoundResult';
 import GameEnd from './pages/GameEnd';
+import StartPage from './pages/StartPage';
 import { socket } from './socket/socket';
 import { loadSession, saveSession } from './utils/sessionManager';
 
@@ -12,12 +13,15 @@ function App() {
   const [isHost, setIsHost] = useState(false);
   const [roomCode, setRoomCode] = useState('');
   const [name, setName] = useState('');
-  const [page, setPage] = useState('join');
+  const [page, setPage] = useState('start');
 
   // Game state tracking
   const [currentSong, setCurrentSong] = useState(null);
   const [roundResult, setRoundResult] = useState(null);
   const [finalScores, setFinalScores] = useState([]);
+
+  const [accessToken, setAccessToken] = useState('');
+  const [playlists, setPlaylists] = useState([]);
 
   // Load session on mount
   useEffect(() => {
@@ -72,8 +76,10 @@ function App() {
   const sharedProps = { roomCode, name, setPage };
 
   switch (page) {
+    case 'start':
+      return <StartPage accessToken={accessToken} setAccessToken={setAccessToken} playlists={playlists} setPlaylists={setPlaylists} setPage={setPage} />;
     case 'join':
-      return <Join setRoomCode={setRoomCode} setName={setName} setPage={setPage} setIsHost={setIsHost} />;
+      return <Join setRoomCode={setRoomCode} setName={setName} setPage={setPage} setIsHost={setIsHost} accessToken={accessToken} />;
     case 'host-wait':
       return <HostWait {...sharedProps} />;
     case 'player-wait':
