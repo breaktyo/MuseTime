@@ -4,13 +4,23 @@ import ChatBox from '../components/ChatBox';
 import PlayerList from '../components/PlayerList';
 import Countdown from '../components/Countdown';
 
-export default function GameRound({ roomCode, currentSong, players }) {
+export default function GameRound({ roomCode, players }) {
   const [guess, setGuess] = useState('');
   const [messages, setMessages] = useState([]);
+  const [currentSong, setCurrentSong] = useState(null); // new state for current song
 
   useEffect(() => {
     socket.on('chatMessage', (msg) => setMessages((prev) => [...prev, msg]));
-    return () => socket.off('chatMessage');
+
+    socket.on('newRound', (songData) => {
+      setCurrentSong(songData);
+      setMessages([]); // clear chat for new round
+    });
+
+    return () => {
+      socket.off('chatMessage');
+      socket.off('newRound');
+    };
   }, []);
 
   const sendGuess = () => {
@@ -21,11 +31,31 @@ export default function GameRound({ roomCode, currentSong, players }) {
   return (
     <div className="flex h-screen">
       <PlayerList players={players} showScore />
-      <div className="flex flex-col justify-center items-center flex-1 gap-4">
+      <div className="flex flex-col justify-center items-center flex-1 gap-4 p-4">
         <Countdown seconds={30} />
-        <div className="text-2xl font-mono tracking-widest">
-          {currentSong ? currentSong.title.replace(/[^ ]/g, '_') : 'Waiting for song...'}
-        </div>
+
+        {currentSong ? (
+          <>
+            <img
+              src={currentSong.image}
+              alt="Song cover"
+              className="w-48 h-48 object-cover rounded-lg shadow"
+            />
+
+            <div className="text-2xl font-mono tracking-widest">
+              {currentSong.title}
+            </div>
+
+            {currentSong.previewUrl ? (
+              <audio controls autoPlay src={currentSong.previewUrl} />
+            ) : (
+              <div className="text-sm text-gray-500">No preview available</div>
+            )}
+          </>
+        ) : (
+          <div className="text-xl">Waiting for song...</div>
+        )}
+
         <ChatBox
           guess={guess}
           setGuess={setGuess}

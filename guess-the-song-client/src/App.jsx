@@ -81,7 +81,7 @@ function App() {
     case 'join':
       return <Join setRoomCode={setRoomCode} setName={setName} setPage={setPage} setIsHost={setIsHost} accessToken={accessToken} />;
     case 'host-wait':
-      return <HostWait {...sharedProps} />;
+      return <HostWait {...sharedProps} accessToken={accessToken} />;
     case 'player-wait':
       return <PlayerWait {...sharedProps} />;
     case 'game-round':
