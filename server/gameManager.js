@@ -103,7 +103,7 @@ class GameManager {
     this.io.to(roomCode).emit('roundResult', result);
 
     if (this.roundTimers[roomCode]) clearTimer(this.roundTimers[roomCode]);
-    this.roundTimers[roomCode] = getTimer(() => this.startNextRound(roomCode), 5000); // 5s delay before next round
+    this.roundTimers[roomCode] = getTimer(() => this.startNextRound(roomCode), 10000); // 5s delay before next round
   }
 
   endGame(roomCode) {
