@@ -9,20 +9,15 @@ export default function GameRound({ roomCode, players }) {
   const [guess, setGuess] = useState('');
   const [messages, setMessages] = useState([]);
   const [currentSong, setCurrentSong] = useState(null);
-  const [roundResultData, setRoundResultData] = useState(null); // round result state
+  const [roundResultData, setRoundResultData] = useState(null);
 
   useEffect(() => {
-    // Chat messages
     socket.on('chatMessage', (msg) => setMessages((prev) => [...prev, msg]));
-
-    // New round starts
     socket.on('newRound', (songData) => {
       setCurrentSong(songData);
       setMessages([]);
-      setRoundResultData(null); // clear round result when new round starts
+      setRoundResultData(null);
     });
-
-    // Round result received
     socket.on('roundResult', (roundData) => {
       setRoundResultData(roundData);
     });
@@ -41,15 +36,16 @@ export default function GameRound({ roomCode, players }) {
 
   return (
     <div className="flex h-screen">
-      <PlayerList players={players} showScore />
+      {/* Left: Players */}
+      <div className="w-1/5 border-r">
+        <PlayerList players={players} showScore />
+      </div>
 
+      {/* Center: Game content */}
       <div className="flex flex-col justify-center items-center flex-1 gap-4 p-4">
-
         {roundResultData ? (
-          // Show RoundResult screen
           <RoundResult roundData={roundResultData} />
         ) : (
-          // Show current game round
           <>
             <Countdown seconds={15} />
 
@@ -65,6 +61,10 @@ export default function GameRound({ roomCode, players }) {
                   {currentSong.title}
                 </div>
 
+                <div className="text-2xl font-mono tracking-widest">
+                  {currentSong.artist}
+                </div>
+
                 {currentSong.previewUrl ? (
                   <audio controls autoPlay src={currentSong.previewUrl} />
                 ) : (
@@ -74,15 +74,17 @@ export default function GameRound({ roomCode, players }) {
             ) : (
               <div className="text-xl">Waiting for song...</div>
             )}
-
-            <ChatBox
-              guess={guess}
-              setGuess={setGuess}
-              messages={messages}
-              onSend={sendGuess}
-            />
           </>
         )}
+      </div>
+
+      <div className="w-1/4 border-l p-2 h-screen">
+        <ChatBox
+          guess={guess}
+          setGuess={setGuess}
+          messages={messages}
+          onSend={sendGuess}
+        />
       </div>
     </div>
   );

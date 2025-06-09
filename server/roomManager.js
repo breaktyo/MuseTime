@@ -60,8 +60,13 @@ class RoomManager {
   getPlayer(socketId) {
     const info = this.playerMap[socketId];
     if (!info) return null;
-    return { id: socketId, ...info };
+  
+    const room = this.rooms[info.roomCode];
+    if (!room) return null;
+  
+    return room.players.find(p => p.id === socketId) || null;
   }
+  
 
   setReady(socketId, roomCode, ready) {
     const room = this.rooms[roomCode];

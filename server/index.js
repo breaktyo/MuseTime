@@ -2,7 +2,7 @@
   const http = require('http');
   const { Server } = require('socket.io');
   const roomManager = require('./roomManager');
-  const chatManager = require('./chatManager');
+  const ChatManager = require('./chatManager');
   const GameManager = require('./gameManager');
   const axios = require('axios');
   const cors = require('cors');
@@ -27,8 +27,9 @@
 
   app.use(cors(corsOptions));
 
-  const gameManager = new GameManager(io, roomManager.rooms);
-
+  //const gameManager = new GameManager(io, roomManager.rooms);
+  const chatManager = new ChatManager(io, roomManager.rooms);
+  const gameManager = new GameManager(io, roomManager.rooms, chatManager);
 
   io.on('connection', (socket) => {
     socket.on('createRoom', ({ name }, callback) => {
@@ -60,7 +61,7 @@
       roomManager.setHostReady(roomCode, ready);
     });
 
-    socket.on('startGame', async ({ roomCode, playlistId, accessToken }) => {
+    /*socket.on('startGame', async ({ roomCode, playlistId, accessToken }) => {
       try {
         const songs = await gameManager.startGame(roomCode, playlistId, accessToken);
     
@@ -71,15 +72,28 @@
         console.error('Error starting game:', err);
         io.to(roomCode).emit('error', { message: 'Failed to start game. Please try again.' });
       }
+    });*/
+    socket.on('startGame', async ({ roomCode, playlistId, accessToken }) => {
+      try {
+        const songs = await gameManager.initializeGame(roomCode, playlistId, accessToken);
+    
+        const players = roomManager.getPlayers(roomCode);
+        io.to(roomCode).emit('playerList', players);
+        io.to(roomCode).emit('gameInitialized', songs);
+    
+      } catch (err) {
+        console.error('Error initializing game:', err);
+        io.to(roomCode).emit('error', { message: 'Failed to initialize game. Please try again.' });
+      }
     });
 
     socket.on('guess', ({ roomCode, message }) => {
       const player = roomManager.getPlayer(socket.id);
-      const result = chatManager.handleGuess(player, roomCode, message);
-      if (result.correct) {
-        gameManager.awardPoints(player.id, roomCode);
-      }
-      io.to(roomCode).emit('chatMessage', { user: player.name, message });
+      chatManager.handleGuess(player, roomCode, message);
+    });
+    
+    socket.on('startFirstRound', ({ roomCode }) => {
+      gameManager.startFirstRound(roomCode);
     });
 
     socket.on('disconnect', () => {

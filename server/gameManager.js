@@ -26,10 +26,11 @@ async function getPlaylistTracks(accessToken, playlistId) {
 
 
 class GameManager {
-  constructor(io, rooms) {
+  constructor(io, rooms, chatManager) {
     this.io = io;
     this.rooms = rooms;
-    this.roundTimers = {}; // store timers per room
+    this.chatManager = chatManager;
+    this.roundTimers = {};
   }
 
   async startGame(roomCode, playlistId, accessToken) {
@@ -77,10 +78,13 @@ class GameManager {
     room.currentSong = currentSong;
     room.guessedPlayers = new Set();
 
+    this.chatManager.resetGuesses(roomCode);
+    
     this.io.to(roomCode).emit('newRound', {
       title: currentSong.title,//.replace(/[^ ]/g, '_'),
       image: currentSong.image,
-      previewUrl: currentSong.previewUrl
+      previewUrl: currentSong.previewUrl,
+      artist: currentSong.artist
     });
 
     if (this.roundTimers[roomCode]) clearTimer(this.roundTimers[roomCode]);
@@ -101,6 +105,7 @@ class GameManager {
     };
 
     this.io.to(roomCode).emit('roundResult', result);
+
 
     if (this.roundTimers[roomCode]) clearTimer(this.roundTimers[roomCode]);
     this.roundTimers[roomCode] = getTimer(() => this.startNextRound(roomCode), 10000); // 5s delay before next round
