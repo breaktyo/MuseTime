@@ -8,9 +8,9 @@ export default function PlayerList({ players = [], showScore }) {
         {players.map((player, i) => (
           <li
             key={i}
-            className="bg-gray-100 rounded-lg px-4 py-2 flex justify-between items-center shadow-sm"
+            className="bg-gray-100 rounded-lg px-4 py-2 flex justify-between items-center shadow-sm break-words"
           >
-            <span className="font-medium">{player.name}</span>
+            <span className="font-medium break-words max-w-[70%]">{player.name}</span>
             {showScore ? (
               <span className="text-sm text-gray-700">{player.score} pts</span>
             ) : (
