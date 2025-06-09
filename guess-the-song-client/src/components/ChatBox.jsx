@@ -20,9 +20,9 @@ export default function ChatBox({ guess, setGuess, messages, onSend }) {
           return (
             <div
               key={index}
-              className={isSystemGuess ? 'text-green-600 font-semibold' : ''}
+              className={`break-words ${isSystemGuess ? 'text-green-600 font-semibold' : ''}`}
             >
-              <span className="font-medium">{msg.user}</span>: {msg.message}
+              <span className="font-medium break-words">{msg.user}</span>: {msg.message}
             </div>
           );
         })}

@@ -89,7 +89,7 @@ function App() {
     case 'round-result':
       return <RoundResult {...sharedProps} result={roundResult} />;
     case 'game-end':
-      return <GameEnd {...sharedProps} scores={finalScores} />;
+      return <GameEnd {...sharedProps} scores={finalScores} onPlayAgain={handlePlayAgain} />;
     default:
       return <div>Loading...</div>;
   }

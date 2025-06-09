@@ -34,20 +34,23 @@ class ChatManager {
     if (guessedTitle && !room.guessedTitles.has(player.name)) {
       player.score += 10;
       room.guessedTitles.add(player.name);
-      responseMessage = `${player.name} has guessed the title!`;
+      responseMessage = ` has guessed the title!`;
       correct = true;
     } else if (guessedArtist && !room.guessedArtists.has(player.name)) {
       player.score += 10;
       room.guessedArtists.add(player.name);
-      responseMessage = `${player.name} has guessed the artist!`;
+      responseMessage = ` has guessed the artist!`;
       correct = true;
     }
 
-    // Send message to everyone in the room
+    // Send chat message to everyone in the room
     this.io.to(roomCode).emit('chatMessage', {
       user: player.name,
       message: responseMessage,
     });
+
+    // 🔥 Emit updated player list with scores
+    this.io.to(roomCode).emit('playerList', room.players);
 
     return { correct };
   }
