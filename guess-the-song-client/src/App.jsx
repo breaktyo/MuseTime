@@ -92,7 +92,7 @@ function App() {
     case 'round-result':
       return <RoundResult {...sharedProps} result={roundResult} />;
     case 'game-end':
-      return <GameEnd {...sharedProps} finalScores={finalScores} />;
+      return <GameEnd {...sharedProps} finalScores={finalScores} spotifyId={spotifyId} />;
     default:
       return <div>Loading...</div>;
   }

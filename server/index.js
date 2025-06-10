@@ -4,6 +4,8 @@
   const roomManager = require('./roomManager');
   const ChatManager = require('./chatManager');
   const GameManager = require('./gameManager');
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
   const axios = require('axios');
   const cors = require('cors');
   require('dotenv').config();
@@ -184,7 +186,25 @@
   });
 
 
-
+  app.get('/api/my-results', async (req, res) => {
+    const spotifyId = req.query.spotifyId;
+  
+    if (!spotifyId) {
+      return res.status(400).json({ error: 'Missing Spotify ID' });
+    }
+  
+    try {
+      const results = await prisma.gameScore.findMany({
+        where: { playerId: spotifyId },
+        orderBy: { date: 'desc' }
+      });
+  
+      res.json(results);
+    } catch (err) {
+      console.error('Error fetching results:', err);
+      res.status(500).json({ error: 'Could not fetch results' });
+    }
+  });
 
 
 

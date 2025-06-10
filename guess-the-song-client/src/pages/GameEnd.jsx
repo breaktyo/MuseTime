@@ -1,6 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 
-export default function GameEnd({ finalScores }) {
+export default function GameEnd({ finalScores, spotifyId  }) {
+  const [pastResults, setPastResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
+
+  const fetchMyResults = async () => {
+    try {
+      const response = await axios.get(`http://localhost:3001/api/my-results`, {
+        params: { spotifyId }
+      });
+      setPastResults(response.data);
+      setShowResults(true);
+    } catch (err) {
+      console.error('Error fetching past results:', err);
+      alert('Could not fetch your past results.');
+    }
+  };
+  
   console.log("finalScores in GameEnd:", finalScores);
 
   if (!Array.isArray(finalScores)) {
@@ -50,6 +67,30 @@ export default function GameEnd({ finalScores }) {
             🎉 Congrats <strong>{finalScores[0].name}</strong>! 🎉
           </div>
         )}
+
+        {spotifyId && (
+          <button
+            onClick={fetchMyResults}
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+          >
+            View My Past Results
+          </button>
+        )}
+
+        {showResults && (
+          <div className="mt-6 w-full text-left">
+            <h4 className="text-lg font-semibold mb-2 text-indigo-700">📜 Your Past Results:</h4>
+            <ul className="space-y-1 max-h-40 overflow-y-auto">
+              {pastResults.map((r, idx) => (
+                <li key={idx} className="text-sm text-gray-800">
+                  {new Date(r.date).toLocaleDateString()} — {r.nickname}: {r.score} pts
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+
       </div>
     </div>
   );
