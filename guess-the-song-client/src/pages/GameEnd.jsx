@@ -1,7 +1,7 @@
 import React from 'react';
 
-export default function GameEnd({ finalScores, onPlayAgain }) {
-  // Handle missing or invalid data
+export default function GameEnd({ finalScores }) {
+  console.log("finalScores in GameEnd:", finalScores);
   if (!Array.isArray(finalScores)) {
     return <div className="text-xl">Loading final scores...</div>;
   }
@@ -35,15 +35,6 @@ export default function GameEnd({ finalScores, onPlayAgain }) {
         <div className="text-lg text-green-600 mt-2">
           🎉 Congrats {finalScores[0].name}! 🎉
         </div>
-      )}
-
-      {onPlayAgain && (
-        <button
-          onClick={onPlayAgain}
-          className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          Play Again
-        </button>
       )}
     </div>
   );
