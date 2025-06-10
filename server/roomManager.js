@@ -83,7 +83,7 @@ class RoomManager {
   setReady(socketId, roomCode, ready) {
     const room = this.rooms[roomCode];
     if (!room) return;
-    const player = room.players.find(p => p.id === socketId);
+    const player = room.players.find(p => p.socketId === socketId);
     if (player) {
       player.ready = ready;
     }
@@ -93,6 +93,10 @@ class RoomManager {
     const room = this.rooms[roomCode];
     if (room) {
       room.hostReady = ready;
+      const hostPlayer = room.players.find(p => p.socketId === room.hostId);
+      if (hostPlayer) {
+        hostPlayer.ready = ready;
+      }
     }
   }
 

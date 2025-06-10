@@ -61,6 +61,8 @@
 
     socket.on('hostReady', ({ roomCode, ready }) => {
       roomManager.setHostReady(roomCode, ready);
+      const players = roomManager.getPlayers(roomCode);
+      io.to(roomCode).emit('playerList', players);
     });
 
     socket.on('startGame', async ({ roomCode, playlistId, accessToken }) => {
