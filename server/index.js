@@ -61,7 +61,7 @@
       roomManager.setHostReady(roomCode, ready);
     });
 
-    /*socket.on('startGame', async ({ roomCode, playlistId, accessToken }) => {
+    socket.on('startGame', async ({ roomCode, playlistId, accessToken }) => {
       try {
         const songs = await gameManager.startGame(roomCode, playlistId, accessToken);
     
@@ -71,19 +71,6 @@
       } catch (err) {
         console.error('Error starting game:', err);
         io.to(roomCode).emit('error', { message: 'Failed to start game. Please try again.' });
-      }
-    });*/
-    socket.on('startGame', async ({ roomCode, playlistId, accessToken }) => {
-      try {
-        const songs = await gameManager.initializeGame(roomCode, playlistId, accessToken);
-    
-        const players = roomManager.getPlayers(roomCode);
-        io.to(roomCode).emit('playerList', players);
-        io.to(roomCode).emit('gameInitialized', songs);
-    
-      } catch (err) {
-        console.error('Error initializing game:', err);
-        io.to(roomCode).emit('error', { message: 'Failed to initialize game. Please try again.' });
       }
     });
 

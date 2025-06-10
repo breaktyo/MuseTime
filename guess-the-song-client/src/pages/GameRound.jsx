@@ -5,19 +5,43 @@ import PlayerList from '../components/PlayerList';
 import Countdown from '../components/Countdown';
 import RoundResult from '../pages/RoundResult';
 
+const getUnderscorePlaceholder = (text = '') =>
+  text.split(' ').map((word, wordIndex) => (
+    <span key={wordIndex} className="mx-1 text-2xl tracking-widest font-mono">
+      {word.split('').map((char, i) =>
+        /[a-zA-Z0-9]/.test(char) ? '_' : char
+      ).join('')}
+    </span>
+  ));
+
+
 export default function GameRound({ roomCode }) {
   const [guess, setGuess] = useState('');
   const [messages, setMessages] = useState([]);
   const [currentSong, setCurrentSong] = useState(null);
   const [roundResultData, setRoundResultData] = useState(null);
   const [players, setPlayers] = useState([]);
+  const [titleGuessed, setTitleGuessed] = useState(false);
+  const [artistGuessed, setArtistGuessed] = useState(false);
 
   useEffect(() => {
-    socket.on('chatMessage', (msg) => setMessages((prev) => [...prev, msg]));
+    //socket.on('chatMessage', (msg) => setMessages((prev) => [...prev, msg]));
+    socket.on('chatMessage', (msg) => {
+      if (msg.message.includes('has guessed the title')) {
+        setTitleGuessed(true);
+      }
+      if (msg.message.includes('has guessed the artist')) {
+        setArtistGuessed(true);
+      }
+      setMessages((prev) => [...prev, msg]);
+    });
+
     socket.on('newRound', (songData) => {
       setCurrentSong(songData);
       setMessages([]);
       setRoundResultData(null);
+      setTitleGuessed(false);
+      setArtistGuessed(false);
     });
     socket.on('roundResult', (roundData) => {
       setRoundResultData(roundData);
@@ -37,12 +61,7 @@ export default function GameRound({ roomCode }) {
     setGuess('');
   };
 
-  const getUnderscorePlaceholder = (text = '') =>
-    text.split(/\s+/).map((word, i) => (
-      <span key={i} className="mx-1 text-2xl tracking-widest font-mono">
-        {'_'.repeat(word.length)}
-      </span>
-    ));
+
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-purple-600 to-indigo-700 text-white">
@@ -68,12 +87,15 @@ export default function GameRound({ roomCode }) {
                     className="w-48 h-48 object-cover rounded-xl shadow-md"
                   />
 
-                  <div className="flex flex-wrap justify-center text-indigo-700">
-                    {getUnderscorePlaceholder(currentSong.title)}
+                  <div className="text-2xl font-bold">
+                    {titleGuessed
+                      ? currentSong.title
+                      : getUnderscorePlaceholder(currentSong.title)}
                   </div>
-
-                  <div className="flex flex-wrap justify-center text-indigo-500">
-                    {getUnderscorePlaceholder(currentSong.artist)}
+                  <div className="text-xl text-gray-600">
+                    {artistGuessed
+                      ? currentSong.artist
+                      : getUnderscorePlaceholder(currentSong.artist)}
                   </div>
 
                   {currentSong.previewUrl ? (

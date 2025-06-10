@@ -18,7 +18,7 @@ function App() {
   // Game state tracking
   const [currentSong, setCurrentSong] = useState(null);
   const [roundResult, setRoundResult] = useState(null);
-  const [finalScores, setFinalScores] = useState([]);
+  const [finalScores, setFinalScores] = useState(null);
 
   const [accessToken, setAccessToken] = useState('');
   const [playlists, setPlaylists] = useState([]);
@@ -89,7 +89,7 @@ function App() {
     case 'round-result':
       return <RoundResult {...sharedProps} result={roundResult} />;
     case 'game-end':
-      return <GameEnd {...sharedProps} scores={finalScores} />;
+      return <GameEnd {...sharedProps} finalScores={finalScores} />;
     default:
       return <div>Loading...</div>;
   }
