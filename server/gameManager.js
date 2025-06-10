@@ -118,6 +118,7 @@ class GameManager {
     const finalScores = [...room.players].sort((a, b) => b.score - a.score);
     this.io.to(roomCode).emit('gameEnded', finalScores);
 
+
     if (this.roundTimers[roomCode]) {
       clearTimer(this.roundTimers[roomCode]);
       delete this.roundTimers[roomCode];
