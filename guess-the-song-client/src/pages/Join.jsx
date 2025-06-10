@@ -2,22 +2,34 @@ import React, { useState } from 'react';
 import { socket } from '../socket/socket';
 import { saveSession } from '../utils/sessionManager';
 
-export default function Join({ setPage, setRoomCode, setName, setIsHost, accessToken }) {
+export default function Join({ setPage, setRoomCode, setName, setIsHost, accessToken, spotifyId, nickname }) {
   const [inputName, setInputName] = useState('');
   const [roomCodeInput, setRoomCodeInput] = useState('');
 
   const handleJoin = () => {
-    if (!inputName || !roomCodeInput) {
-      alert('Please enter your name and room code');
+    if (!inputName && !nickname) {
+      alert('Please enter your name');
       return;
     }
-
-    socket.emit('joinRoom', { name: inputName, roomCode: roomCodeInput }, (success) => {
+  
+    if (!roomCodeInput) {
+      alert('Please enter a room code');
+      return;
+    }
+  
+    const nameToUse = nickname || inputName;
+    const idToUse = spotifyId || socket.id;
+  
+    socket.emit('joinRoom', {
+      name: nameToUse,
+      spotifyId: idToUse,
+      roomCode: roomCodeInput
+    }, (success) => {
       if (success) {
         setRoomCode(roomCodeInput);
-        setName(inputName);
+        setName(nameToUse);
         setIsHost(false);
-        saveSession(roomCodeInput, inputName, false);
+        saveSession(roomCodeInput, nameToUse, false);
         setPage('player-wait');
       } else {
         alert('Room not found');
@@ -26,16 +38,14 @@ export default function Join({ setPage, setRoomCode, setName, setIsHost, accessT
   };
 
   const handleCreate = () => {
-    if (!inputName) {
-      alert('Please enter your name');
-      return;
-    }
-
-    socket.emit('createRoom', { name: inputName }, (code) => {
+    socket.emit('createRoom', {
+      name: nickname,
+      spotifyId: spotifyId
+    }, (code) => {
       setRoomCode(code);
-      setName(inputName);
+      setName(nickname);
       setIsHost(true);
-      saveSession(code, inputName, true);
+      saveSession(code, nickname, true);
       setPage('host-wait');
     });
   };

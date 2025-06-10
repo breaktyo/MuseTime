@@ -32,15 +32,15 @@
   const gameManager = new GameManager(io, roomManager.rooms, chatManager);
 
   io.on('connection', (socket) => {
-    socket.on('createRoom', ({ name }, callback) => {
-      const { roomCode, players } = roomManager.createRoom(socket.id, name);
+    socket.on('createRoom', ({ name, spotifyId }, callback) => {
+      const { roomCode, players } = roomManager.createRoom(socket.id, name, spotifyId);
       socket.join(roomCode);
       io.to(roomCode).emit('playerList', players);
       callback(roomCode);
     });
 
-    socket.on('joinRoom', ({ name, roomCode }, callback) => {
-      const success = roomManager.joinRoom(socket.id, name, roomCode);
+    socket.on('joinRoom', ({ name, spotifyId, roomCode }, callback) => {
+      const success = roomManager.joinRoom(socket.id, name, spotifyId, roomCode);
       if (success) {
         socket.join(roomCode);
         const players = roomManager.getPlayers(roomCode);
@@ -76,6 +76,10 @@
 
     socket.on('guess', ({ roomCode, message }) => {
       const player = roomManager.getPlayer(socket.id);
+      if (!player) {
+        console.warn(`Player not found for socket: ${socket.id}`);
+        return;
+      }
       chatManager.handleGuess(player, roomCode, message);
     });
     
@@ -115,32 +119,44 @@
 
   app.get('/callback', async (req, res) => {
     const code = req.query.code || null;
-
+  
     try {
-        const tokenResponse = await axios.post(
-            'https://accounts.spotify.com/api/token',
-            new URLSearchParams({
-                grant_type: 'authorization_code',
-                code: code,
-                redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
-                client_id: process.env.SPOTIFY_CLIENT_ID,
-                client_secret: process.env.SPOTIFY_CLIENT_SECRET
-            }),
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            }
-        );
-
-        const { access_token, refresh_token } = tokenResponse.data;
-
-        // For demo: redirect to frontend with tokens in query string
-        res.redirect(`http://localhost:3000/?access_token=${access_token}&refresh_token=${refresh_token}`);
-
+      const tokenResponse = await axios.post(
+        'https://accounts.spotify.com/api/token',
+        new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: code,
+          redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
+          client_id: process.env.SPOTIFY_CLIENT_ID,
+          client_secret: process.env.SPOTIFY_CLIENT_SECRET
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }
+      );
+  
+      const { access_token, refresh_token } = tokenResponse.data;
+  
+      // 🔽 Fetch Spotify profile
+      const profileResponse = await axios.get('https://api.spotify.com/v1/me', {
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      });
+  
+      const { id: spotifyId, display_name: nickname } = profileResponse.data;
+  
+      // 🔁 Option 1: Send all info to frontend in query string
+      res.redirect(
+        `http://localhost:3000/?access_token=${access_token}&refresh_token=${refresh_token}&spotifyId=${spotifyId}&nickname=${encodeURIComponent(nickname)}`
+      );
+  
+  
     } catch (err) {
-        console.error('Error getting tokens:', err.response.data);
-        res.send('Error during authentication');
+      console.error('Error getting tokens:', err.response?.data || err.message);
+      res.send('Error during authentication');
     }
   });
 

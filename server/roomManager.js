@@ -7,9 +7,15 @@ class RoomManager {
     this.playerMap = {}; 
   }
 
-  createRoom(socketId, hostName) {
+  createRoom(socketId, hostName, spotifyId) {
     const roomCode = generateRoomCode();
-    const player = { id: socketId, name: hostName, score: 0, ready: false };
+    const player = {
+      id: spotifyId || socketId, // use Spotify ID if available
+      name: hostName,
+      socketId,
+      score: 0,
+      ready: false
+    };
 
     this.rooms[roomCode] = {
       hostId: socketId,
@@ -24,11 +30,17 @@ class RoomManager {
     return { roomCode, players: this.rooms[roomCode].players };
   }
 
-  joinRoom(socketId, name, roomCode) {
+  joinRoom(socketId, name, spotifyId, roomCode) {
     const room = this.rooms[roomCode];
     if (!room) return false;
 
-    const player = { id: socketId, name, score: 0, ready: false };
+    const player = {
+      id: spotifyId || socketId,
+      name,
+      socketId,
+      score: 0,
+      ready: false
+    };
     room.players.push(player);
     this.playerMap[socketId] = { name, roomCode };
 
@@ -64,7 +76,7 @@ class RoomManager {
     const room = this.rooms[info.roomCode];
     if (!room) return null;
   
-    return room.players.find(p => p.id === socketId) || null;
+    return room.players.find(p => p.socketId === socketId) || null;
   }
   
 

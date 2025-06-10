@@ -23,6 +23,9 @@ function App() {
   const [accessToken, setAccessToken] = useState('');
   const [playlists, setPlaylists] = useState([]);
 
+  const [spotifyId, setSpotifyId] = useState('');
+  const [nickname, setNickname] = useState('');
+
   // Load session on mount
   useEffect(() => {
     const session = loadSession();
@@ -77,9 +80,9 @@ function App() {
 
   switch (page) {
     case 'start':
-      return <StartPage accessToken={accessToken} setAccessToken={setAccessToken} playlists={playlists} setPlaylists={setPlaylists} setPage={setPage} />;
+      return <StartPage accessToken={accessToken} setAccessToken={setAccessToken} playlists={playlists} setPlaylists={setPlaylists} setPage={setPage} setSpotifyId={setSpotifyId} setNickname={setNickname} />;
     case 'join':
-      return <Join setRoomCode={setRoomCode} setName={setName} setPage={setPage} setIsHost={setIsHost} accessToken={accessToken} />;
+      return <Join setRoomCode={setRoomCode} setName={setName} setPage={setPage} setIsHost={setIsHost} accessToken={accessToken} spotifyId={spotifyId} nickname={nickname} />;
     case 'host-wait':
       return <HostWait {...sharedProps} accessToken={accessToken} />;
     case 'player-wait':

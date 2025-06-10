@@ -1,5 +1,7 @@
 const { getTimer, clearTimer } = require('./utils/timer');
 const axios = require('axios');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 async function getPlaylistTracks(accessToken, playlistId) {
   let allTracks = [];
@@ -111,12 +113,29 @@ class GameManager {
     this.roundTimers[roomCode] = getTimer(() => this.startNextRound(roomCode), 10000); // 5s delay before next round
   }
 
-  endGame(roomCode) {
+  async endGame(roomCode) {
     const room = this.rooms[roomCode];
     if (!room) return;
 
     const finalScores = [...room.players].sort((a, b) => b.score - a.score);
     this.io.to(roomCode).emit('gameEnded', finalScores);
+
+    try {
+      const savePromises = finalScores.map(player => {
+        return prisma.gameScore.create({
+          data: {
+            playerId: player.id,
+            nickname: player.name,
+            score: player.score,
+            date: new Date()
+          }
+        });
+      });
+      await Promise.all(savePromises);
+      console.log(`Scores saved for room ${roomCode}`);
+    } catch (err) {
+      console.error('Error saving scores:', err);
+    }
 
 
     if (this.roundTimers[roomCode]) {

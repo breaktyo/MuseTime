@@ -3,15 +3,20 @@ import axios from 'axios';
 
 const BACKEND_URL = 'http://127.0.0.1:3001';
 
-export default function StartPage({ setAccessToken, accessToken, setPlaylists, setPage }) {
+export default function StartPage({ setAccessToken, accessToken, setPlaylists, setPage, setSpotifyId, setNickname }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('access_token');
+    const spotifyId = params.get('spotifyId');
+    const nickname = params.get('nickname');
+
     if (token) {
       setAccessToken(token);
+      if (spotifyId) setSpotifyId(spotifyId);
+      if (nickname) setNickname(decodeURIComponent(nickname));
       window.history.replaceState({}, document.title, '/');
     }
-  }, [setAccessToken]);
+  }, [setAccessToken, setSpotifyId, setNickname]);
 
   const handleLogin = () => {
     window.location.href = `${BACKEND_URL}/login`;
