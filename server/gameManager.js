@@ -16,11 +16,10 @@ async function getPlaylistTracks(accessToken, playlistId) {
 
     const tracks = response.data.items
       .map(item => item.track);
-      //.filter(track => track && track.preview_url); // only keep tracks with preview_url
 
     allTracks = allTracks.concat(tracks);
 
-    nextUrl = response.data.next; // Spotify pagination
+    nextUrl = response.data.next;
   }
 
   return allTracks;
@@ -39,15 +38,12 @@ class GameManager {
     const room = this.rooms[roomCode];
     if (!room) throw new Error('Room not found');
   
-    // Fetch full playlist tracks
     
     const tracks = await getPlaylistTracks(accessToken, playlistId);
   
-    // Shuffle
     const shuffledTracks = tracks.sort(() => Math.random() - 0.5);
 
   
-    // Map tracks to your room.playlist format
     room.playlist = shuffledTracks.map(track => ({
       title: track.name,
       artist: track.artists.map(a => a.name).join(', '),
@@ -57,12 +53,12 @@ class GameManager {
   
     room.currentSongIndex = -1;
     room.scores = {};
-    room.players.forEach(player => (player.score = 0)); // Reset scores
+    room.players.forEach(player => (player.score = 0));
   
     this.io.to(roomCode).emit('gameStarted');
     this.startNextRound(roomCode);
   
-    return room.playlist; // optionally return for logging/debugging
+    return room.playlist;
   }
   
 
@@ -83,14 +79,14 @@ class GameManager {
     this.chatManager.resetGuesses(roomCode);
     
     this.io.to(roomCode).emit('newRound', {
-      title: currentSong.title,//.replace(/[^ ]/g, '_'),
+      title: currentSong.title,
       image: currentSong.image,
       previewUrl: currentSong.previewUrl,
       artist: currentSong.artist
     });
 
     if (this.roundTimers[roomCode]) clearTimer(this.roundTimers[roomCode]);
-    this.roundTimers[roomCode] = getTimer(() => this.endRound(roomCode), 15000); // 15s round
+    this.roundTimers[roomCode] = getTimer(() => this.endRound(roomCode), 15000);
   }
 
   endRound(roomCode) {
@@ -110,7 +106,7 @@ class GameManager {
 
 
     if (this.roundTimers[roomCode]) clearTimer(this.roundTimers[roomCode]);
-    this.roundTimers[roomCode] = getTimer(() => this.startNextRound(roomCode), 10000); // 5s delay before next round
+    this.roundTimers[roomCode] = getTimer(() => this.startNextRound(roomCode), 8000);
   }
 
   async endGame(roomCode) {

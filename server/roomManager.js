@@ -10,7 +10,7 @@ class RoomManager {
   createRoom(socketId, hostName, spotifyId) {
     const roomCode = generateRoomCode();
     const player = {
-      id: spotifyId || socketId, // use Spotify ID if available
+      id: spotifyId || socketId,
       name: hostName,
       socketId,
       score: 0,

@@ -8,12 +8,12 @@ import RoundResult from '../pages/RoundResult';
 const getUnderscorePlaceholder = (text = '') =>
   text.split(' ').map((word, wordIndex) => (
     <span key={wordIndex} className="mx-1 text-2xl tracking-widest font-mono">
-      {word.split('').map((char, i) =>
-        /[a-zA-Z0-9]/.test(char) ? '_' : char
-      ).join('')}
+      {word
+        .split('')
+        .map((char) => (/[a-zA-Z0-9]/.test(char) ? '_' : char))
+        .join('')}
     </span>
   ));
-
 
 export default function GameRound({ roomCode }) {
   const [guess, setGuess] = useState('');
@@ -21,17 +21,18 @@ export default function GameRound({ roomCode }) {
   const [currentSong, setCurrentSong] = useState(null);
   const [roundResultData, setRoundResultData] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [titleGuessed, setTitleGuessed] = useState(false);
-  const [artistGuessed, setArtistGuessed] = useState(false);
+  const [titleGuessers, setTitleGuessers] = useState(new Set());
+  const [artistGuessers, setArtistGuessers] = useState(new Set());
+
+  const playerId = players.find((p) => p.socketId === socket.id)?.id || socket.id;
 
   useEffect(() => {
-    //socket.on('chatMessage', (msg) => setMessages((prev) => [...prev, msg]));
     socket.on('chatMessage', (msg) => {
       if (msg.message.includes('has guessed the title')) {
-        setTitleGuessed(true);
+        setTitleGuessers((prev) => new Set(prev).add(msg.playerId));
       }
       if (msg.message.includes('has guessed the artist')) {
-        setArtistGuessed(true);
+        setArtistGuessers((prev) => new Set(prev).add(msg.playerId));
       }
       setMessages((prev) => [...prev, msg]);
     });
@@ -40,12 +41,11 @@ export default function GameRound({ roomCode }) {
       setCurrentSong(songData);
       setMessages([]);
       setRoundResultData(null);
-      setTitleGuessed(false);
-      setArtistGuessed(false);
+      setTitleGuessers(new Set());
+      setArtistGuessers(new Set());
     });
-    socket.on('roundResult', (roundData) => {
-      setRoundResultData(roundData);
-    });
+
+    socket.on('roundResult', setRoundResultData);
     socket.on('playerList', setPlayers);
 
     return () => {
@@ -61,16 +61,15 @@ export default function GameRound({ roomCode }) {
     setGuess('');
   };
 
-
+  const hasGuessedTitle = titleGuessers.has(playerId);
+  const hasGuessedArtist = artistGuessers.has(playerId);
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-purple-600 to-indigo-700 text-white">
-      {/* Left: Player list */}
       <div className="w-1/5 bg-white text-black p-4 overflow-y-auto">
         <PlayerList players={players} showScore />
       </div>
 
-      {/* Center: Game content */}
       <div className="flex-1 flex items-center justify-center px-6 py-8">
         <div className="bg-white text-black rounded-2xl shadow-lg w-full max-w-2xl p-6 flex flex-col items-center gap-6">
           {roundResultData ? (
@@ -88,12 +87,13 @@ export default function GameRound({ roomCode }) {
                   />
 
                   <div className="text-2xl font-bold">
-                    {titleGuessed
+                    {hasGuessedTitle
                       ? currentSong.title
                       : getUnderscorePlaceholder(currentSong.title)}
                   </div>
+
                   <div className="text-xl text-gray-600">
-                    {artistGuessed
+                    {hasGuessedArtist
                       ? currentSong.artist
                       : getUnderscorePlaceholder(currentSong.artist)}
                   </div>
@@ -112,7 +112,6 @@ export default function GameRound({ roomCode }) {
         </div>
       </div>
 
-      {/* Right: Chat */}
       <div className="w-1/4 bg-white text-black p-4 h-screen overflow-hidden flex flex-col">
         <ChatBox
           guess={guess}

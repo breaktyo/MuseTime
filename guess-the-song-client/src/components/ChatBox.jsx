@@ -3,14 +3,12 @@ import React, { useEffect, useRef } from 'react';
 export default function ChatBox({ guess, setGuess, messages, onSend }) {
   const chatEndRef = useRef(null);
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   return (
     <div className="flex flex-col h-full w-full">
-      {/* Chat messages */}
       <div className="flex-1 overflow-y-auto bg-white p-2 border rounded">
         {messages.map((msg, index) => {
           const isSystemGuess =
@@ -29,7 +27,6 @@ export default function ChatBox({ guess, setGuess, messages, onSend }) {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input */}
       <input
         value={guess}
         onChange={(e) => setGuess(e.target.value)}

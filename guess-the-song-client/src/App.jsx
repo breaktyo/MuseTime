@@ -15,7 +15,6 @@ function App() {
   const [name, setName] = useState('');
   const [page, setPage] = useState('start');
 
-  // Game state tracking
   const [currentSong, setCurrentSong] = useState(null);
   const [roundResult, setRoundResult] = useState(null);
   const [finalScores, setFinalScores] = useState(null);
@@ -26,7 +25,7 @@ function App() {
   const [spotifyId, setSpotifyId] = useState('');
   const [nickname, setNickname] = useState('');
 
-  // Load session on mount
+
   useEffect(() => {
     const session = loadSession();
     if (session) {
@@ -37,15 +36,14 @@ function App() {
     }
   }, []);
 
-  // Save session on state change
+
   useEffect(() => {
     saveSession({ page, roomCode, name, isHost });
   }, [page, roomCode, name, isHost]);
 
-  // Socket listeners for game flow
+
   useEffect(() => {
     socket.on('gameStarted', () => {
-      // Only emitted once at beginning
       console.log('Game started');
       setPage('game-round');
     });

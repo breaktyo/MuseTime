@@ -113,7 +113,7 @@
             client_id: process.env.SPOTIFY_CLIENT_ID,
             scope: scopes,
             redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
-            state: 'some-random-state' // You can generate random state per session for more security
+            state: 'some-random-state'
         });
 
     res.redirect(authUrl);
@@ -141,7 +141,6 @@
   
       const { access_token, refresh_token } = tokenResponse.data;
   
-      // 🔽 Fetch Spotify profile
       const profileResponse = await axios.get('https://api.spotify.com/v1/me', {
         headers: {
           Authorization: `Bearer ${access_token}`
@@ -150,7 +149,6 @@
   
       const { id: spotifyId, display_name: nickname } = profileResponse.data;
   
-      // 🔁 Option 1: Send all info to frontend in query string
       res.redirect(
         `http://localhost:3000/?access_token=${access_token}&refresh_token=${refresh_token}&spotifyId=${spotifyId}&nickname=${encodeURIComponent(nickname)}`
       );
@@ -164,7 +162,7 @@
 
 
   app.get('/playlists', async (req, res) => {
-    const access_token = req.headers.authorization?.split(' ')[1]; // Expect Bearer token
+    const access_token = req.headers.authorization?.split(' ')[1];
 
     if (!access_token) {
         return res.status(400).json({ error: 'No access token provided' });
@@ -209,9 +207,4 @@
 
 
 
-
-
-
-
-  //server.listen(3001, () => console.log('Server listening on port 3001'));
   server.listen(3001, '127.0.0.1', () => console.log('Server listening on http://127.0.0.1:3001'));
